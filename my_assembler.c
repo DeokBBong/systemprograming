@@ -1,5 +1,6 @@
 #include "my_assembler.h"
 
+
 int main(int argc, char *argv[]) {
     if (argc != 3) {
         fprintf(stderr, "Usage: %s <inst_data_file> <source_code_file>\n", argv[0]);
@@ -29,6 +30,9 @@ void load_inst_table(const char *filename) {
     char type_char[5]; 
     int format;
     unsigned int opcode_hex;
+
+    extern int inst_index;
+    extern inst *inst_table[MAX_INST];
     
     while (fscanf(fp, "%s %s %d %x", name, type_char, &format, &opcode_hex) == 4) {
         if (inst_index >= MAX_INST) {
@@ -68,6 +72,10 @@ void load_source_code(const char *filename) {
     }
 
     char line_buffer[MAX_LINE_LENGTH];
+
+    extern int line_num;
+    extern char *input_data[MAX_LINES];
+
     while (fgets(line_buffer, sizeof(line_buffer), fp) != NULL && line_num < MAX_LINES) {
         input_data[line_num] = my_strdup(line_buffer);
         if (input_data[line_num] == NULL) {
@@ -81,7 +89,13 @@ void load_source_code(const char *filename) {
 }
 
 void parse_source_code() {
-    for (int i = 0; i < line_num; i++) {
+
+    int i; 
+    extern int line_num;
+    extern char *input_data[MAX_LINES];
+    extern token *token_table[MAX_LINES];
+    
+    for (i = 0; i < line_num; i++) {
         char *line_copy = my_strdup(input_data[i]);
         if (line_copy == NULL) continue;
 
@@ -142,10 +156,34 @@ void parse_source_code() {
     }
 }
 
+
+inst *find_opcode(const char *op_str) {
+
+    int i;
+    extern int inst_index;
+    extern inst *inst_table[MAX_INST];
+    
+    for (i = 0; i < inst_index; i++) {
+  
+        if (strcmp(inst_table[i]->str, op_str) == 0) { 
+            return inst_table[i];
+        }
+    }
+
+    return NULL;
+}
+
+
 void print_parsed_output() {
     printf("--- SIC Program Listing (with OPCODE) ---\n");
     
-    for (int i = 0; i < line_num; i++) {
+
+    int i;
+    extern int line_num;
+    extern char *input_data[MAX_LINES];
+    extern token *token_table[MAX_LINES];
+    
+    for (i = 0; i < line_num; i++) {
         token *t = token_table[i];
         if (t == NULL) continue;
         
@@ -181,11 +219,19 @@ void print_parsed_output() {
 }
 
 void free_all_memory() {
-    for (int i = 0; i < inst_index; i++) {
+
+    int i;
+    extern int inst_index;
+    extern inst *inst_table[MAX_INST];
+    extern int line_num;
+    extern char *input_data[MAX_LINES];
+    extern token *token_table[MAX_LINES];
+    
+    for (i = 0; i < inst_index; i++) {
         free(inst_table[i]);
     }
 
-    for (int i = 0; i < line_num; i++) {
+    for (i = 0; i < line_num; i++) {
         free(input_data[i]); 
         if (token_table[i]) {
             free(token_table[i]->label);    
